@@ -1,29 +1,32 @@
-<?php
+ <?php
 session_start();
-
-if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
+require_once 'includes/db.php';
+require_once 'includes/auth.php';
+    
+if (isLoggedIn()) {
+    if ($_SESSION['role'] === 'admin') {
+        header("Location: admin_dashboard.php");
+    } else {
+        header("Location: dashboard.php");
+    }
     exit();
 }
 
 $error = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id = $_POST['studentID'];
+    $id = sanitizeInput($_POST['studentID']);
     $pass = $_POST['password'];
-    $userType = $_POST['userType'];
 
-    if(($userType === "student" && $id === "12345" && $pass === "password") || 
-       ($userType === "admin" && $id === "admin" && $pass === "admin123")) {
-        
-        $_SESSION['user_id'] = $id;
-        $_SESSION['user_role'] = $userType;
-        
-        header("Location: dashboard.php"); 
+    if (loginUser($id, $pass)) {
+        if ($_SESSION['role'] === 'admin') {
+            header("Location: admin_dashboard.php");
+        } else {
+            header("Location: dashboard.php");
+        }
         exit();
-    } else {
-        $error = true;
     }
+    $error = true;
 }
 ?>
 <!DOCTYPE html>
@@ -53,7 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             z-index: 2;
         }
 
-        /* INCREASED SIZE HERE: 160px */
         .school-photo-container {
             width: 160px;
             height: 160px;
@@ -205,10 +207,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <p class="subtitle">Please enter your details to access your ballot</p>
 
     <form method="POST" action="login.php">
-        <div class="user-type">
-            <label><input type="radio" name="userType" value="student" checked> Student</label>
-            <label><input type="radio" name="userType" value="admin"> Admin</label>
-        </div>
 
         <label class="input-label">Identification ID</label>
         <input type="text" name="studentID" placeholder="Enter your ID number" required>
@@ -228,7 +226,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <button type="submit" class="btn">Sign in to Account</button>
     </form>
 
-    <div class="signup-link">Don't have an account? <a href="#">Click here</a></div>
+   <div class="signup-link">
+    Don't have an account? <a href="signup.php">Click here</a>
+</div>
 </div>
 
 <div class="right">
